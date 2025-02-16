@@ -1,5 +1,3 @@
-
-
 // This is the standard layout for the VGA Buffer.
 // If there is a different buffer per system, a new mode must be created.
 const BUFFER_HEIGHT: usize = 25;
@@ -117,6 +115,7 @@ impl Writer {
         self.color_code = ColorCode::new(color, Color::Black)
     }
 
+    #[allow(dead_code)]
     pub fn set_background_color(&mut self, color: Color){
         self.color_code = ColorCode::new(Color::White, color)
     }

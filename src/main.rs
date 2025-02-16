@@ -17,6 +17,13 @@ pub extern "C" fn _start() -> ! {
     println!("Welcome to my Bootloader/Kernel!");
     vga_buffer::WRITER.lock().set_color(Color::White, Color::Black);
     println!("Distribution: \"{}\" - v{}", DISTNAME, K_VERSION);
+
+    baremetal::init();
+
+    x86_64::instructions::interrupts::int3();
+
+    println!("Kernel has handled Interrupt.");
+
     loop{}
 
 }
