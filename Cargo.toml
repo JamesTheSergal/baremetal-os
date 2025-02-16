@@ -11,6 +11,7 @@ panic = "abort"
 
 [dependencies]
 bootloader = "0.9"
+volatile = "0.2.6"
 
 [package.metadata.bootimage]
 # The cargo subcommand that will be used for building the kernel.
@@ -29,12 +30,3 @@ run-args = []
 # Additional arguments passed to the run command for test executables
 # Applies to `bootimage runner`
 test-args = []
-
-# An exit code that should be considered as success for test executables
-test-success-exit-code = {integer}
-
-# The timeout for running a test through `bootimage test` or `bootimage runner` (in seconds)
-test-timeout = 300
-
-# Whether the `-no-reboot` flag should be passed to test executables
-test-no-reboot = true
