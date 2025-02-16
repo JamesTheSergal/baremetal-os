@@ -2,6 +2,17 @@
 #![no_main] // Disable rust level entry points
 #![feature(abi_x86_interrupt)]
 
+// Important Bootloader specific
+use bootloader_api::{entry_point, BootInfo};
+use bootloader_api::config::{FrameBuffer, BootloaderConfig, Mapping};
+
+pub static BOOTLOADER_CONFIG: BootloaderConfig = {
+    let mut config = BootloaderConfig::new_default();
+    config.mappings.physical_memory = Mapping::Dynamic;
+    config
+}
+
+
 // Import for target
 mod kernel;
 mod os;
@@ -16,16 +27,16 @@ pub const K_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const DISTNAME: &str = env!("CARGO_PKG_NAME");
 
 
+fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
+    
 
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+    kernel::lib::init();
+
+
     vga_driver::WRITER.lock().set_color(Color::Black, Color::White);
     println!("Welcome to my Bootloader/Kernel!");
     vga_driver::WRITER.lock().set_color(Color::White, Color::Black);
     println!("Distribution: \"{}\" - v{}", DISTNAME, K_VERSION);
-
-    kernel::lib::init();
-
     hlt_loop();
 
 }

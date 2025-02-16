@@ -10,13 +10,17 @@ panic = "abort"
 panic = "abort"
 
 [dependencies]
-bootloader = { version = "0.9", features = ["map_physical_memory"]}
+bootloader = "0.11.10"
+bootloader_api = "0.11.10"
 volatile = "0.2.6"
 spin = "0.5.2"
 x86_64 = "0.14.2"
 uart_16550 = "0.2.0"
 pic8259 = "0.10.1"
 pc-keyboard = "0.7.0"
+
+[build-dependencies]
+kernel = { path = "src", artifact = "bin", target = "x86_64_baremetal_srg.json" }
 
 [dependencies.lazy_static]
 version = "1.0"
