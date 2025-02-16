@@ -1,3 +1,4 @@
+use crate::print;
 use crate::println;
 use lazy_static::lazy_static;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
@@ -37,18 +38,58 @@ lazy_static!{
         let mut idt = InterruptDescriptorTable::new();
         idt.breakpoint.set_handler_fn(breakpoint_handler);
         idt.double_fault.set_handler_fn(double_fault_handler);
+        idt[PICInterruptIndex::Timer.as_usize()].set_handler_fn(system_timer);
+        idt[PICInterruptIndex::Keyboard.as_usize()].set_handler_fn(keyboard_handler);
         idt
     };
 }
 
 pub fn init_idt(){
+    println!("Kernel: Loading InterruptDescriptorTable (IDT)...");
     IDT.load();
+    println!("Kernel: Setup IDT and Legacy APCI Mode.")
 }
 
 extern "x86-interrupt" fn system_timer(
     stack_frame: InterruptStackFrame)
 {
-    println!("EXCEPTION: Breakpoint\n{:#?}", stack_frame);
+    print!(".");
+    unsafe {
+        PICS.lock().notify_end_of_interrupt(PICInterruptIndex::Timer.as_u8());
+    }
+}
+
+extern "x86-interrupt" fn keyboard_handler(
+    stack_frame: InterruptStackFrame)
+{
+    use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
+    use spin::Mutex;
+    use x86_64::instructions::port::Port;
+
+    lazy_static! {
+        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> =
+            Mutex::new(Keyboard::new(ScancodeSet1::new(),
+                layouts::Us104Key, HandleControl::Ignore)
+            );
+    }
+
+    let mut port = Port::new(0x60);
+    let scancode: u8 = unsafe{port.read()};
+    let mut keyboard = KEYBOARD.lock();
+
+
+    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
+        if let Some(key) = keyboard.process_keyevent(key_event) {
+            match key {
+                DecodedKey::Unicode(character) => print!("{}", character),
+                DecodedKey::RawKey(key) => print!("{:?}", key),
+            }
+        }
+    }
+    
+    unsafe {
+        PICS.lock().notify_end_of_interrupt(PICInterruptIndex::Keyboard.as_u8());
+    }
 }
 
 extern "x86-interrupt" fn breakpoint_handler(
