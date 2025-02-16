@@ -19,9 +19,6 @@ pub extern "C" fn _start() -> ! {
     println!("Distribution: \"{}\" - v{}", DISTNAME, K_VERSION);
 
     baremetal::init();
-
-    x86_64::instructions::interrupts::int3();
-
     println!("Kernel has handled Interrupt.");
 
     loop{}
