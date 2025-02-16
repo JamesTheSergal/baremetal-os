@@ -5,10 +5,6 @@
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
-// TODO Move this to system detection and variables area.
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const DISTNAME: &str = env!("CARGO_PKG_NAME");
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -58,7 +54,7 @@ struct Buffer {
 
 pub struct Writer {
     column_position: usize,
-    color_code: &mut ColorCode,
+    color_code: ColorCode,
     buffer: &'static mut Buffer,
 }
 
@@ -84,7 +80,26 @@ impl Writer {
         }
     }
 
-    fn new_line(&mut self) {/* TODO */}
+    fn new_line(&mut self) {
+        for row in 1..BUFFER_HEIGHT {
+            for col in 0..BUFFER_WIDTH {
+                let character = self.buffer.chars[row][col].read();
+                self.buffer.chars[row - 1][col].write(character);
+            }
+        }
+        self.clear_row(BUFFER_HEIGHT - 1);
+        self.column_position = 0;
+    }
+
+    fn clear_row(&mut self, row: usize){
+        let blank = ScreenChar {
+            ascii_character: b' ',
+            color_code: ColorCode::new(Color::White, Color::Black)
+        };
+        for col in 0..BUFFER_WIDTH {
+            self.buffer.chars[row][col].write(blank);
+        }
+    }
 
     pub fn write_string(&mut self, s: &str) {
         for byte in s.bytes() {
@@ -98,8 +113,16 @@ impl Writer {
         }
     }
 
-    pub fn set_color(&mut self, color_code: ColorCode){
-        self.color_code = color_code;
+    pub fn set_text_color(&mut self, color: Color){
+        self.color_code = ColorCode::new(color, Color::Black)
+    }
+
+    pub fn set_background_color(&mut self, color: Color){
+        self.color_code = ColorCode::new(Color::White, color)
+    }
+
+    pub fn set_color(&mut self, foreground: Color, background: Color){
+        self.color_code = ColorCode::new(foreground, background)
     }
     
 }
@@ -114,17 +137,46 @@ impl fmt::Write for Writer {
     }
 }
 
-// Demo code apart of the module
+// Global interface to provide easy display access
 
-pub fn print_demo(){
-    use core::fmt::Write;
-    let mut writer = Writer{
+use lazy_static::lazy_static;
+use spin::Mutex;
+
+// A static at runtime!? Crazy! Since Rust is strict with static references, we need to do lazy static.
+// Basically even if we referenced this static and wrote data, it wouldn't actually do anything.
+lazy_static! {
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
         color_code: ColorCode::new(Color::White, Color::Black),
-        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
-    };
+        buffer: unsafe { &mut *(0xb8000 as *mut Buffer)},
+    });
+}
+
+// Macros that make life a lot easier
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! println {
+    () => (crate::print!("\n"));
+    ($($arg:tt)*) => (crate::print!("{}\n", format_args!($($arg)*)));
+}
+
+#[doc(hidden)]
+pub fn _print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    WRITER.lock().write_fmt(args).unwrap();
+}
 
 
-    writer.write_string("Welcome to my Bootloader/Kernel!");
-    write!(writer, "Distribution {} - v{}", DISTNAME, VERSION).unwrap();
+// Let's just make a format for a system 
+pub fn draw_panic_message(args: fmt::Arguments){
+    use core::fmt::Write;
+    WRITER.lock().set_text_color(Color::LightRed);
+    print!("--- KERNEL PANIC ---\n");
+    WRITER.lock().set_text_color(Color::Yellow);
+    WRITER.lock().write_fmt(args).unwrap();
 }
