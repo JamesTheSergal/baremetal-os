@@ -1,16 +1,14 @@
 #![no_std] // Do not import Rust standard library. 
 #![no_main] // Disable rust level entry points
 #![feature(abi_x86_interrupt)]
-#![feature(lang_items)]
-
 
 // Important Bootloader specific
 use bootloader_api::{entry_point, BootInfo};
-use bootloader_api::config::{FrameBuffer, BootloaderConfig, Mapping};
+use bootloader_api::config::BootloaderConfig;
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
-    let mut config = BootloaderConfig::new_default();
-    //config.mappings.physical_memory = Mapping::Dynamic;
+    let config = BootloaderConfig::new_default();
+    //config.mappings.
     config
 };
 
@@ -28,10 +26,14 @@ use kernel::vga_driver::Color;
 pub const K_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const DISTNAME: &str = env!("CARGO_PKG_NAME");
 
-bootloader_api::entry_point!(kernel_main, config=&BOOTLOADER_CONFIG);
+entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     
+    println!("Kernel size: {}K PhyAddress: 0x{:X}", boot_info.kernel_len, boot_info.kernel_addr);
+    println!("Kernel: Basic frame buffer established at: {:#?}", boot_info.framebuffer);
+    println!("Kernel: UEFI RSDP scan found: {:?}", boot_info.rsdp_addr);
+    println!("Memory regions initialized: {:#?}", boot_info.memory_regions);
 
     kernel::lib::init();
 

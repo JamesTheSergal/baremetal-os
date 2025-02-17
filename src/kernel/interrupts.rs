@@ -51,7 +51,7 @@ pub fn init_idt(){
 }
 
 extern "x86-interrupt" fn system_timer(
-    stack_frame: InterruptStackFrame)
+    _stack_frame: InterruptStackFrame)
 {
     print!(".");
     unsafe {
@@ -60,7 +60,7 @@ extern "x86-interrupt" fn system_timer(
 }
 
 extern "x86-interrupt" fn keyboard_handler(
-    stack_frame: InterruptStackFrame)
+    _stack_frame: InterruptStackFrame)
 {
     use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
     use spin::Mutex;
