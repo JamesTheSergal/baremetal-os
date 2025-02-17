@@ -1,6 +1,8 @@
 #![no_std] // Do not import Rust standard library. 
 #![no_main] // Disable rust level entry points
 #![feature(abi_x86_interrupt)]
+#![feature(lang_items)]
+
 
 // Important Bootloader specific
 use bootloader_api::{entry_point, BootInfo};
@@ -8,9 +10,9 @@ use bootloader_api::config::{FrameBuffer, BootloaderConfig, Mapping};
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
-    config.mappings.physical_memory = Mapping::Dynamic;
+    //config.mappings.physical_memory = Mapping::Dynamic;
     config
-}
+};
 
 
 // Import for target
@@ -26,6 +28,7 @@ use kernel::vga_driver::Color;
 pub const K_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const DISTNAME: &str = env!("CARGO_PKG_NAME");
 
+bootloader_api::entry_point!(kernel_main, config=&BOOTLOADER_CONFIG);
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     

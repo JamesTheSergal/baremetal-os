@@ -19,9 +19,6 @@ uart_16550 = "0.2.0"
 pic8259 = "0.10.1"
 pc-keyboard = "0.7.0"
 
-[build-dependencies]
-kernel = { path = "src", artifact = "bin", target = "x86_64_baremetal_srg.json" }
-
 [dependencies.lazy_static]
 version = "1.0"
 features = ["spin_no_std"]
